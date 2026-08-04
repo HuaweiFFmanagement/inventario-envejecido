@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Seguimiento Promotoría · Huawei</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --red: #C7000B;
+    --red-dark: #7A0000;
+    --ink: #1C1C1E;
+    --muted: #6B7280;
+    --bg: #F3F4F6;
+    --card: #FFFFFF;
+    --line: #E5E7EB;
+    --ok: #1E9E5B;
+    --amber: #E3A008;
+    --orange: #D9631E;
+    --crit: #7A0000;
+    --info: #3B5BDB;
+    --gray: #8A8F99;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  #app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+
+  /* ---- Header ---- */
+  .topbar{
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    color:#fff;
+    padding: 18px 18px 22px;
+    position: sticky; top:0; z-index: 20;
+  }
+  .topbar .brand{display:flex;align-items:center;justify-content:space-between;}
+  .brand-mark{
+    display:flex;align-items:center;gap:10px;
+  }
+  .brand-mark .dot{
+    width:10px;height:10px;border-radius:50%;background:#fff;opacity:.85;
+  }
+  .brand-title{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.92;}
+  .back-btn{
+    background: rgba(255,255,255,.16);
+    border:none;color:#fff;padding:8px 12px;border-radius:10px;
+    font-size:14px;font-weight:600;cursor:pointer;
+  }
+  .back-btn:active{background:rgba(255,255,255,.28);}
+  .headline{font-size:22px;font-weight:800;margin-top:10px;letter-spacing:-.01em;}
+  .subline{font-size:13px;opacity:.85;margin-top:3px;}
+
+  /* ---- Content ---- */
+  .content{flex:1;padding:16px;padding-bottom:40px;}
+
+  /* Home */
+  .home-hero{
+    text-align:center;padding: 8px 6px 26px;
+  }
+  .home-hero h1{font-size:19px;margin:14px 0 4px;font-weight:800;}
+  .home-hero p{color:var(--muted);font-size:14px;line-height:1.5;margin:0;}
+  .role-grid{display:flex;flex-direction:column;gap:12px;margin-top:22px;}
+  .role-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;text-align:left;cursor:pointer;
+    display:flex;align-items:center;gap:14px;
+    transition: transform .08s ease;
+  }
+  .role-card:active{transform:scale(.98);}
+  .role-icon{
+    width:44px;height:44px;border-radius:12px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+    background:#FBEBEC;color:var(--red);
+  }
+  .role-icon.admin{background:#EEF0FF;color:var(--info);}
+  .role-card h3{margin:0 0 3px;font-size:15.5px;}
+  .role-card p{margin:0;font-size:12.5px;color:var(--muted);}
+
+  .meta-strip{
+    margin-top:22px;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px 16px;font-size:12.5px;color:var(--muted);
+    display:flex;justify-content:space-between;gap:10px;
+  }
+  .meta-strip b{color:var(--ink);}
+
+  /* Search */
+  .search-box{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;font-size:15px;width:100%;outline:none;
+  }
+  .search-box:focus{border-color:var(--red);}
+  .autocomplete-wrap{position:relative;}
+  .suggestions{
+    position:absolute;top:100%;left:0;right:0;margin-top:6px;
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    box-shadow:0 10px 28px rgba(0,0,0,.10);z-index:30;overflow:hidden;
+    max-height:320px;overflow-y:auto;
+  }
+  .suggestion-item{
+    padding:12px 14px;font-size:14.5px;cursor:pointer;border-bottom:1px solid var(--line);
+  }
+  .suggestion-item:last-child{border-bottom:none;}
+  .suggestion-item:active{background:#FAFAFA;}
+  .suggestion-item mark{background:transparent;color:var(--red);font-weight:800;}
+  .suggestion-sub{font-size:11.5px;color:var(--muted);margin-top:1px;}
+  .list-caption{font-size:12px;color:var(--muted);margin:16px 2px 6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+  .store-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+  .store-row{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;
+  }
+  .store-row:active{background:#FAFAFA;}
+  .store-row .name{font-size:14.5px;font-weight:600;}
+  .store-row .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .badge-count{
+    font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;
+    background:#F3F4F6;color:var(--muted);white-space:nowrap;
+  }
+  .badge-count.has-crit{background:#FBEBEC;color:var(--crit);}
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--muted);
+  }
+  .empty-state .big{font-size:34px;margin-bottom:10px;}
+  .empty-state p{font-size:14px;line-height:1.6;}
+
+  /* Store detail */
+  .store-summary{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;margin-bottom:14px;
+  }
+  .store-summary .row1{display:flex;justify-content:space-between;align-items:baseline;}
+  .store-summary .num{font-size:26px;font-weight:800;color:var(--red);}
+  .store-summary .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+  .chip-row{display:flex;gap:7px;overflow-x:auto;padding:2px 0 12px;}
+  .chip{
+    flex:0 0 auto;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:700;
+    border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;
+    white-space:nowrap;
+  }
+  .chip.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .sort-row{display:flex;justify-content:flex-end;margin-bottom:8px;}
+  .sort-select{
+    font-size:12.5px;border:1px solid var(--line);border-radius:9px;padding:6px 9px;
+    background:var(--card);color:var(--ink);
+  }
+
+  .item-list{display:flex;flex-direction:column;gap:10px;}
+  .item-card{
+    background:var(--card);border-radius:var(--radius);border:1px solid var(--line);
+    padding:14px;position:relative;overflow:hidden;border-left:5px solid var(--gray);
+  }
+  .item-card.b-critico{border-left-color:var(--crit);}
+  .item-card.b-alta{border-left-color:var(--orange);}
+  .item-card.b-baja{border-left-color:var(--amber);}
+  .item-card.b-ok{border-left-color:var(--ok);}
+  .item-card.b-novedad{border-left-color:var(--info);}
+  .item-card.b-transito{border-left-color:var(--gray);}
+
+  .item-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+  .item-title{font-size:15px;font-weight:700;line-height:1.3;}
+  .item-sku{font-size:12px;color:var(--muted);margin-top:2px;}
+  .item-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;}
+  .tag{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 7px;border-radius:6px;background:#F3F4F6;color:var(--muted);}
+
+  .days-tag{
+    flex:0 0 auto;text-align:center;background:var(--ink);color:#fff;border-radius:10px;
+    padding:6px 10px;min-width:52px;
+  }
+  .days-tag .n{font-size:18px;font-weight:800;line-height:1;}
+  .days-tag .t{font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.8;}
+  .item-card.b-critico .days-tag{background:var(--crit);}
+  .item-card.b-alta .days-tag{background:var(--orange);}
+  .item-card.b-baja .days-tag{background:var(--amber);color:#3a2900;}
+  .item-card.b-ok .days-tag{background:var(--ok);}
+  .item-card.b-novedad .days-tag{background:var(--info);}
+
+  .item-foot{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);
+    display:flex;justify-content:space-between;align-items:flex-end;gap:8px;}
+  .item-sn{font-size:11px;color:var(--muted);font-family: ui-monospace, SFMono-Regular, Menlo, monospace;}
+  .item-price{font-size:14px;font-weight:800;white-space:nowrap;}
+  .item-obs{font-size:11.5px;color:var(--red-dark);margin-top:8px;background:#FFF6F5;padding:7px 9px;border-radius:8px;line-height:1.4;}
+  .alerta-label{font-size:11px;font-weight:700;margin-top:6px;}
+
+  /* Admin */
+  .pin-wrap{padding-top:30px;text-align:center;}
+  .pin-wrap .big{font-size:34px;margin-bottom:14px;}
+  .pin-input{
+    font-size:24px;letter-spacing:.5em;text-align:center;width:100%;max-width:220px;
+    padding:14px;border-radius:12px;border:1px solid var(--line);margin:16px auto;display:block;
+  }
+  .btn{
+    display:block;width:100%;padding:14px;border-radius:12px;border:none;
+    background:var(--red);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;
+  }
+  .btn:active{background:var(--red-dark);}
+  .btn.secondary{background:#EEF0F1;color:var(--ink);}
+  .btn:disabled{opacity:.5;}
+  .err{color:var(--red);font-size:13px;margin-top:8px;}
+
+  .upload-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;text-align:center;
+  }
+  .upload-card input[type=file]{display:none;}
+  .file-label{
+    display:block;border:2px dashed var(--line);border-radius:12px;padding:26px 14px;cursor:pointer;color:var(--muted);
+  }
+  .file-label b{color:var(--ink);display:block;margin-bottom:4px;}
+  .date-field{margin:16px 0;text-align:left;}
+  .date-field label{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .date-field input{
+    width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);margin-top:5px;font-size:14px;
+  }
+  .preview-box{
+    background:#F8F9FA;border-radius:12px;padding:14px;margin-top:16px;text-align:left;font-size:13px;
+  }
+  .preview-box .pline{display:flex;justify-content:space-between;padding:4px 0;}
+  .preview-box .pline b{color:var(--ink);}
+  .progress-wrap{margin-top:14px;height:8px;background:#EEE;border-radius:6px;overflow:hidden;}
+  .progress-bar{height:100%;background:var(--red);width:0%;transition:width .2s;}
+  .success-box{text-align:center;padding:30px 10px;}
+  .success-box .big{font-size:40px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const ADMIN_PIN = "2026"; // acceso blando al panel de administración (no es seguridad real)
+const DATA_URL = "./data/inventario.json"; // archivo del repo que contiene el inventario publicado
+const SHEET_NAME = "BASE";
+
+/* ============ STATE ============ */
+let state = {
+  view: "home",
+  cache: null,          // parsed storage payload {meta, tiendas, data}
+  loading: false,
+  selectedSlug: null,
+  filter: "todos",
+  sort: "dias",
+  search: "",
+  storeSearch: "",
+  adminUnlocked: false,
+  pinInput: "",
+  pinError: "",
+  parsedRows: null,     // rows parsed from uploaded xlsx
+  parsedSummary: null,
+  fechaCorte: new Date().toISOString().slice(0,10),
+  publishing: false,
+  publishProgress: 0,
+  publishDone: false,
+  parseError: ""
+};
+
+/* ============ UTIL ============ */
+function slugify(s){
+  return (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"") || "sin_nombre";
+}
+function normHeader(h){
+  return (h||"").toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");
+}
+function fmtMoney(n){
+  n = Number(n)||0;
+  return "$" + n.toLocaleString("es-CO");
+}
+function fmtDateTime(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-CO",{day:"2-digit",month:"short",year:"numeric"}) + " · " +
+         d.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+}
+function fmtDateOnly(v){
+  if(!v) return "—";
+  if(v instanceof Date) return v.toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit",year:"numeric"});
+  return v.toString();
+}
+function alertaBucket(alerta){
+  const a = (alerta||"").toUpperCase();
+  if(a.includes("CRITICO")) return "critico";
+  if(a.includes("ALERTA 4") || a.includes("ALERTA 3")) return "alta";
+  if(a.includes("ALERTA 2") || a.includes("ALERTA 1")) return "baja";
+  if(a.includes("OK")) return "ok";
+  if(a.includes("NOVEDAD")) return "novedad";
+  if(a.includes("TRANSITO")) return "transito";
+  return "otro";
+}
+function bucketLabel(b){
+  return {critico:"Crítico", alta:"Alerta alta", baja:"Alerta", ok:"OK", novedad:"Novedad", transito:"En tránsito", otro:"Otro"}[b] || "Otro";
+}
+
+async function loadData(force){
+  if(state.cache && !force) return state.cache;
+  if(location.protocol === "file:"){
+    state.cache = null;
+    state.loadError = "file";
+    return null;
+  }
+  try{
+    const res = await fetch(DATA_URL + "?t=" + Date.now(), {cache:"no-store"});
+    if(!res.ok) throw new Error("sin archivo publicado");
+    state.cache = await res.json();
+    state.loadError = null;
+  }catch(e){
+    state.cache = null;
+    state.loadError = "fetch";
+  }
+  return state.cache;
+}
+
+/* ============ RENDER ROOT ============ */
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  if(state.view === "home") app.appendChild(renderHome());
+  else if(state.view === "promotor-search") app.appendChild(renderStoreSearch());
+  else if(state.view === "promotor-detail") app.appendChild(renderStoreDetail());
+  else if(state.view === "admin-pin") app.appendChild(renderAdminPin());
+  else if(state.view === "admin-upload") app.appendChild(renderAdminUpload());
+}
+
+function el(tag, cls, html){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(html !== undefined) e.innerHTML = html;
+  return e;
+}
+
+/* ============ HOME ============ */
+function renderHome(){
+  const wrap = document.createElement("div");
+
+  const top = el("div","topbar");
+  top.innerHTML = `
+    <div class="brand">
+      <div class="brand-mark"><span class="dot"></span><span class="brand-title">Huawei · Fuerza de Ventas</span></div>
+    </div>
+    <div class="headline">Seguimiento Promotoría</div>
+    <div class="subline">Inventario envejecido por punto de venta</div>
+  `;
+  wrap.appendChild(top);
+
+  const content = el("div","content");
+  const hero = el("div","home-hero");
+  hero.innerHTML = `<h1>¿Qué necesitas hacer?</h1><p>Consulta las referencias que debes mover en tu punto de venta, o actualiza la información de la semana.</p>`;
+  content.appendChild(hero);
+
+  const grid = el("div","role-grid");
+
+  const promCard = el("div","role-card");
+  promCard.innerHTML = `<div class="role-icon">📦</div><div><h3>Soy promotor</h3><p>Buscar mi punto de venta y ver qué mover</p></div>`;
+  promCard.onclick = () => { state.view = "promotor-search"; render(); };
+  grid.appendChild(promCard);
+
+  const adminCard = el("div","role-card");
+  adminCard.innerHTML = `<div class="role-icon admin">🔐</div><div><h3>Actualizar inventario</h3><p>Cargar el reporte semanal (solo administrador)</p></div>`;
+  adminCard.onclick = () => { state.view = "admin-pin"; state.pinInput=""; state.pinError=""; render(); };
+  grid.appendChild(adminCard);
+
+  content.appendChild(grid);
+
+  const metaStrip = el("div","meta-strip","Cargando información…");
+  content.appendChild(metaStrip);
+  wrap.appendChild(content);
+
+  loadData().then(data=>{
+    if(state.loadError === "file"){
+      metaStrip.innerHTML = `⚠️ Ábrela desde el link publicado (GitHub Pages) — abierta como archivo local no puede leer <b>data/inventario.json</b>.`;
+    }else if(!data){
+      metaStrip.innerHTML = `Aún no hay <b>data/inventario.json</b> en el repositorio. Usa <b>Actualizar inventario</b> para generarlo y súbelo al repo.`;
+    }else{
+      metaStrip.innerHTML = `<span>Última actualización<br><b>${fmtDateTime(data.meta.fechaCarga)}</b></span><span style="text-align:right">Corte de datos<br><b>${fmtDateOnly(data.meta.fechaCorte)}</b></span>`;
+    }
+  });
+
+  return wrap;
+}
+
+/* ============ HEADER HELPER (sub-pages) ============ */
+function subHeader(title, subtitle, onBack){
+  const top = el("div","topbar");
+  const backBtn = `<button class="back-btn" id="backBtn">← Volver</button>`;
+  top.innerHTML = `
+    <div class="brand">
+      <div class="brand-mark"><span class="dot"></span><span class="brand-title">Huawei · Fuerza de Ventas</span></div>
+      ${backBtn}
+    </div>
+    <div class="headline">${title}</div>
+    ${subtitle ? `<div class="subline">${subtitle}</div>` : ""}
+  `;
+  setTimeout(()=>{ document.getElementById("backBtn").onclick = onBack; },0);
+  return top;
+}
+
+/* ============ PROMOTOR: BUSCAR TIENDA ============ */
+function goToStore(slug){
+  state.selectedSlug = slug; state.filter="todos"; state.search=""; state.storeSearch=""; state.view="promotor-detail"; render();
+}
+
+function rankStores(tiendas, q){
+  if(!q) return tiendas.slice().sort((a,b)=> a.nombre.localeCompare(b.nombre));
+  const ql = q.toLowerCase();
+  return tiendas
+    .filter(t => t.nombre.toLowerCase().includes(ql))
+    .map(t => ({ t, rank: t.nombre.toLowerCase().startsWith(ql) ? 0 : 1 }))
+    .sort((a,b)=> a.rank - b.rank || a.t.nombre.localeCompare(b.t.nombre))
+    .map(x=>x.t);
+}
+
+function highlight(name, q){
+  if(!q) return name;
+  const idx = name.toLowerCase().indexOf(q.toLowerCase());
+  if(idx === -1) return name;
+  return name.slice(0,idx) + "<mark>" + name.slice(idx, idx+q.length) + "</mark>" + name.slice(idx+q.length);
+}
+
+function renderStoreSearch(){
+  const wrap = document.createElement("div");
+  wrap.appendChild(subHeader("Mi punto de venta","Escribe el nombre de tu tienda", ()=>{ state.view="home"; render(); }));
+
+  const content = el("div","content");
+
+  const acWrap = el("div","autocomplete-wrap");
+  const search = document.createElement("input");
+  search.className = "search-box";
+  search.placeholder = "Ej: CAV Alamos, Cúcuta, Chapinero…";
+  search.value = state.storeSearch;
+  search.autocomplete = "off";
+  acWrap.appendChild(search);
+
+  const suggBox = el("div","suggestions");
+  suggBox.style.display = "none";
+  acWrap.appendChild(suggBox);
+  content.appendChild(acWrap);
+
+  const caption = el("div","list-caption","Todas las tiendas");
+  content.appendChild(caption);
+  const listWrap = el("div","store-list","Cargando tiendas…");
+  content.appendChild(listWrap);
+  wrap.appendChild(content);
+
+  function updateSuggestions(){
+    const data = state.cache;
+    if(!data) return;
+    const q = state.storeSearch.trim();
+    if(!q){ suggBox.style.display = "none"; return; }
+    const matches = rankStores(data.tiendas, q).slice(0,8);
+    if(!matches.length){
+      suggBox.innerHTML = `<div class="suggestion-item" style="color:var(--muted);cursor:default;">Sin coincidencias</div>`;
+      suggBox.style.display = "block";
+      return;
+    }
+    suggBox.innerHTML = "";
+    matches.forEach(t=>{
+      const item = el("div","suggestion-item");
+      item.innerHTML = `${highlight(t.nombre, q)}<div class="suggestion-sub">${t.total} referencia${t.total===1?"":"s"}${t.criticos>0 ? " · " + t.criticos + " crítica" + (t.criticos===1?"":"s") : ""}</div>`;
+      item.onmousedown = (ev)=>{ ev.preventDefault(); goToStore(t.slug); };
+      suggBox.appendChild(item);
+    });
+    suggBox.style.display = "block";
+  }
+
+  search.oninput = (e)=>{ state.storeSearch = e.target.value; updateSuggestions(); renderStoreListInto(listWrap); };
+  search.onfocus = updateSuggestions;
+  document.addEventListener("click", function outsideClick(ev){
+    if(!acWrap.contains(ev.target)){ suggBox.style.display = "none"; }
+    if(!document.body.contains(acWrap)){ document.removeEventListener("click", outsideClick); }
+  });
+
+  loadData().then(data=>{
+    if(!data || !data.tiendas || !data.tiendas.length){
+      listWrap.className = "empty-state";
+      listWrap.innerHTML = `<div class="big">📭</div><p>Todavía no hay inventario cargado.<br>Pídele al administrador que publique el reporte de la semana.</p>`;
+      caption.style.display = "none";
+      return;
+    }
+    renderStoreListInto(listWrap, data.tiendas);
+  });
+
+  return wrap;
+}
+
+function renderStoreListInto(listWrap, tiendasArg){
+  const data = state.cache;
+  const tiendas = tiendasArg || (data ? data.tiendas : []);
+  const filtered = rankStores(tiendas, state.storeSearch.trim());
+
+  listWrap.className = "store-list";
+  listWrap.innerHTML = "";
+  if(!filtered.length){
+    listWrap.className = "empty-state";
+    listWrap.innerHTML = `<div class="big">🔍</div><p>No encontramos una tienda con ese nombre.</p>`;
+    return;
+  }
+  filtered.forEach(t=>{
+    const row = el("div","store-row");
+    const critBadge = t.criticos > 0 ? `has-crit` : "";
+    row.innerHTML = `
+      <div><div class="name">${highlight(t.nombre, state.storeSearch.trim())}</div><div class="sub">${t.total} referencia${t.total===1?"":"s"} en seguimiento</div></div>
+      <div class="badge-count ${critBadge}">${t.criticos > 0 ? t.criticos + " crít." : "OK"}</div>
+    `;
+    row.onclick = ()=> goToStore(t.slug);
+    listWrap.appendChild(row);
+  });
+}
+
+/* ============ PROMOTOR: DETALLE TIENDA ============ */
+function renderStoreDetail(){
+  const wrap = document.createElement("div");
+  const data = state.cache;
+  const tienda = data && data.tiendas.find(t=>t.slug === state.selectedSlug);
+  const items = data ? (data.data[state.selectedSlug] || []) : [];
+
+  wrap.appendChild(subHeader(tienda ? tienda.nombre : "Tienda", "Referencias para mover", ()=>{ state.view="promotor-search"; render(); }));
+
+  const content = el("div","content");
+
+  const critCount = items.filter(i=>alertaBucket(i.al)==="critico").length;
+  const summary = el("div","store-summary");
+  summary.innerHTML = `
+    <div class="row1"><div><div class="num">${items.length}</div><div class="lbl">Referencias en seguimiento</div></div>
+    <div style="text-align:right"><div class="num" style="color:var(--crit)">${critCount}</div><div class="lbl">Críticas +180 días</div></div></div>
+  `;
+  content.appendChild(summary);
+
+  // chips
+  const chips = [
+    ["todos","Todos"], ["critico","Crítico"], ["alta","Alerta alta"], ["baja","Alerta"], ["ok","OK"], ["novedad","Novedad"]
+  ];
+  const chipRow = el("div","chip-row");
+  chips.forEach(([key,label])=>{
+    const c = el("div", "chip" + (state.filter===key?" active":""), label);
+    c.onclick = ()=>{ state.filter = key; render(); };
+    chipRow.appendChild(c);
+  });
+  content.appendChild(chipRow);
+
+  const search = el("input","search-box");
+  search.placeholder = "Buscar producto o serial…";
+  search.value = state.search;
+  search.oninput = (e)=>{ state.search = e.target.value; renderItemListInto(itemsWrap, items); };
+  content.appendChild(search);
+
+  const sortRow = el("div","sort-row");
+  const sel = document.createElement("select");
+  sel.className = "sort-select";
+  sel.innerHTML = `<option value="dias">Ordenar: días ↓</option><option value="nombre">Ordenar: nombre A-Z</option>`;
+  sel.value = state.sort;
+  sel.onchange = (e)=>{ state.sort = e.target.value; renderItemListInto(itemsWrap, items); };
+  sortRow.appendChild(sel);
+  content.appendChild(sortRow);
+
+  const itemsWrap = el("div","item-list");
+  content.appendChild(itemsWrap);
+  renderItemListInto(itemsWrap, items);
+
+  wrap.appendChild(content);
+  return wrap;
+}
+
+function renderItemListInto(itemsWrap, items){
+  let list = items.slice();
+  if(state.filter !== "todos"){
+    list = list.filter(i => alertaBucket(i.al) === state.filter);
+  }
+  const q = state.search.trim().toLowerCase();
+  if(q){
+    list = list.filter(i => (i.nm+" "+i.cl+" "+i.tp+" "+i.sn).toLowerCase().includes(q));
+  }
+  if(state.sort === "dias"){
+    list.sort((a,b)=> (Number(b.da)||0) - (Number(a.da)||0));
+  }else{
+    list.sort((a,b)=> (a.nm||"").localeCompare(b.nm||""));
+  }
+
+  itemsWrap.innerHTML = "";
+  if(!list.length){
+    const empty = el("div","empty-state");
+    empty.innerHTML = `<div class="big">✅</div><p>No hay referencias en esta categoría.</p>`;
+    itemsWrap.appendChild(empty);
+    return;
+  }
+
+  list.forEach(i=>{
+    const bucket = alertaBucket(i.al);
+    const card = el("div", "item-card b-" + bucket);
+    card.innerHTML = `
+      <div class="item-top">
+        <div>
+          <div class="item-title">${i.nm || "—"} · ${i.cl || ""}</div>
+          <div class="item-sku">${i.tp || ""}</div>
+          <div class="item-tags">
+            <span class="tag">${i.ct || ""}</span>
+            ${i.sc ? `<span class="tag">${i.sc}</span>` : ""}
+            ${i.es && i.es !== "NINGUNO" ? `<span class="tag">${i.es}</span>` : ""}
+          </div>
+        </div>
+        <div class="days-tag"><div class="n">${i.da ?? "—"}</div><div class="t">días</div></div>
+      </div>
+      <div class="alerta-label" style="color:${bucketColor(bucket)}">${i.al || ""}</div>
+      <div class="item-foot">
+        <div>
+          <div class="item-sn">SN: ${i.sn || "—"}</div>
+          <div class="item-sn">Últ. mov.: ${i.um || "—"}</div>
+        </div>
+        <div class="item-price">${fmtMoney(i.pr)}</div>
+      </div>
+      ${i.ob ? `<div class="item-obs">${i.ob}</div>` : ""}
+    `;
+    itemsWrap.appendChild(card);
+  });
+}
+
+function bucketColor(b){
+  return {critico:"var(--crit)", alta:"var(--orange)", baja:"#8a6d00", ok:"var(--ok)", novedad:"var(--info)", transito:"var(--gray)", otro:"var(--muted)"}[b] || "var(--muted)";
+}
+
+/* ============ ADMIN: PIN ============ */
+function renderAdminPin(){
+  const wrap = document.createElement("div");
+  wrap.appendChild(subHeader("Panel del administrador","Acceso restringido", ()=>{ state.view="home"; render(); }));
+
+  const content = el("div","content");
+  const box = el("div","pin-wrap");
+  box.innerHTML = `<div class="big">🔐</div><p style="color:var(--muted);font-size:14px;">Ingresa el código de acceso para cargar el inventario semanal.</p>`;
+  const input = document.createElement("input");
+  input.className = "pin-input";
+  input.type = "tel";
+  input.maxLength = 6;
+  input.placeholder = "····";
+  input.value = state.pinInput;
+  input.oninput = (e)=>{ state.pinInput = e.target.value; };
+  box.appendChild(input);
+
+  if(state.pinError){
+    box.appendChild(el("div","err",state.pinError));
+  }
+
+  const btn = el("button","btn","Entrar");
+  btn.onclick = ()=>{
+    if(state.pinInput === ADMIN_PIN){
+      state.adminUnlocked = true;
+      state.view = "admin-upload";
+      state.parsedRows = null;
+      state.parsedSummary = null;
+      state.publishDone = false;
+      render();
+    }else{
+      state.pinError = "Código incorrecto. Intenta de nuevo.";
+      render();
+    }
+  };
+  box.appendChild(btn);
+
+  content.appendChild(box);
+  wrap.appendChild(content);
+  return wrap;
+}
+
+/* ============ ADMIN: UPLOAD ============ */
+function renderAdminUpload(){
+  const wrap = document.createElement("div");
+  wrap.appendChild(subHeader("Actualizar inventario","Carga el reporte semanal (.xlsx)", ()=>{ state.view="home"; render(); }));
+
+  const content = el("div","content");
+
+  if(state.publishDone){
+    const box = el("div","success-box");
+    box.innerHTML = `
+      <div class="big">⬇️</div>
+      <h3>inventario.json generado</h3>
+      <p style="color:var(--muted);font-size:14px;line-height:1.6;">
+        Se descargó el archivo <b>inventario.json</b>. Para publicarlo:
+      </p>
+      <div class="preview-box" style="text-align:left;">
+        1. Abre tu repositorio en GitHub.<br>
+        2. Entra a la carpeta <b>data/</b>.<br>
+        3. Sube el archivo descargado y reemplaza el <b>inventario.json</b> actual (mismo nombre).<br>
+        4. Confirma el cambio ("Commit changes").<br>
+        En 1–2 minutos el equipo verá la información nueva al abrir el link.
+      </div>
+    `;
+    const btn = el("button","btn","Volver al inicio");
+    btn.onclick = ()=>{ state.view="home"; state.publishDone=false; state.parsedRows=null; state.parsedSummary=null; render(); };
+    box.appendChild(btn);
+    content.appendChild(box);
+    wrap.appendChild(content);
+    return wrap;
+  }
+
+  const card = el("div","upload-card");
+
+  if(!state.parsedRows){
+    card.innerHTML = `
+      <label class="file-label" id="fileLabel">
+        <b>Toca para elegir el archivo</b>
+        Reporte de seguimiento (.xlsx) — hoja "${SHEET_NAME}"
+      </label>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    `;
+    if(state.parseError) card.appendChild(el("div","err",state.parseError));
+    content.appendChild(card);
+    wrap.appendChild(content);
+    setTimeout(()=>{
+      const input = document.getElementById("fileInput");
+      document.getElementById("fileLabel").onclick = ()=> input.click();
+      input.onchange = (e)=> handleFile(e.target.files[0]);
+    },0);
+    return wrap;
+  }
+
+  // Preview + publish
+  const s = state.parsedSummary;
+  card.innerHTML = `
+    <div class="big">📄</div>
+    <div style="font-weight:700;font-size:15px;">Archivo leído correctamente</div>
+    <div class="date-field">
+      <label>Fecha de corte del reporte</label>
+      <input type="date" id="fechaCorte" value="${state.fechaCorte}">
+    </div>
+    <div class="preview-box">
+      <div class="pline"><span>Referencias encontradas</span><b>${s.total}</b></div>
+      <div class="pline"><span>Puntos de venta</span><b>${s.tiendas}</b></div>
+      <div class="pline"><span>En estado crítico (+180 días)</span><b style="color:var(--crit)">${s.criticos}</b></div>
+      <div class="pline"><span>Filas sin bodega / sin serial (omitidas)</span><b>${s.omitidas}</b></div>
+    </div>
+  `;
+
+  if(state.publishing){
+    const pw = el("div","progress-wrap");
+    pw.innerHTML = `<div class="progress-bar" style="width:${state.publishProgress}%"></div>`;
+    card.appendChild(pw);
+  }else{
+    const btnPub = el("button","btn","Generar y descargar inventario.json");
+    btnPub.onclick = doPublish;
+    card.appendChild(btnPub);
+    const btnCancel = el("button","btn secondary","Elegir otro archivo");
+    btnCancel.onclick = ()=>{ state.parsedRows=null; state.parsedSummary=null; render(); };
+    card.appendChild(btnCancel);
+  }
+
+  content.appendChild(card);
+  wrap.appendChild(content);
+
+  setTimeout(()=>{
+    const fc = document.getElementById("fechaCorte");
+    if(fc) fc.onchange = (e)=>{ state.fechaCorte = e.target.value; };
+  },0);
+
+  return wrap;
+}
+
+function handleFile(file){
+  if(!file) return;
+  state.parseError = "";
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:"array", cellDates:true});
+      const sheet = wb.Sheets[SHEET_NAME] || wb.Sheets[wb.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, {defval:null});
+      if(!rawRows.length){ throw new Error("La hoja no tiene datos."); }
+
+      const headerKeys = Object.keys(rawRows[0]);
+      const map = {};
+      headerKeys.forEach(h=>{ map[normHeader(h)] = h; });
+      const findKey = (...cands) => { for(const c of cands){ if(map[c]) return map[c]; } return null; };
+      const precioKey = headerKeys.find(h => { const n = normHeader(h); return n.includes("precio") && n.includes("con") && n.includes("iva"); });
+
+      const K = {
+        sn: findKey("serialnumber"),
+        material: findKey("material"),
+        nombre: findKey("nombre"),
+        color: findKey("color"),
+        bodega: findKey("bodega"),
+        categoria: findKey("categoria"),
+        subcategoria: findKey("subcategoria"),
+        escenario: findKey("escenariopromotor"),
+        template: findKey("template"),
+        dias: findKey("diasdeantiguedad"),
+        ultimoMov: findKey("ultimomovimiento"),
+        alerta: findKey("alerta"),
+        unidades: findKey("unidadesdisponibles"),
+        obs: findKey("observaciones"),
+        precio: precioKey
+      };
+      if(!K.sn || !K.bodega){
+        throw new Error("No se reconocieron las columnas esperadas (SERIAL NUMBER / Bodega). Verifica que sea el archivo correcto.");
+      }
+
+      const rows = [];
+      let omitidas = 0;
+      rawRows.forEach(r=>{
+        const sn = r[K.sn];
+        const bodega = r[K.bodega];
+        if(!sn || !bodega){ omitidas++; return; }
+        rows.push({
+          sn: String(sn),
+          mt: K.material ? r[K.material] : null,
+          nm: K.nombre ? r[K.nombre] : "",
+          cl: K.color ? r[K.color] : "",
+          bd: String(bodega),
+          ct: K.categoria ? r[K.categoria] : "",
+          sc: K.subcategoria ? r[K.subcategoria] : "",
+          tp: K.template ? r[K.template] : "",
+          da: K.dias ? Number(r[K.dias])||0 : 0,
+          um: K.ultimoMov ? fmtDateOnly(r[K.ultimoMov]) : "",
+          al: K.alerta ? r[K.alerta] : "",
+          ud: K.unidades ? Number(r[K.unidades])||0 : 0,
+          pr: K.precio ? Number(r[K.precio])||0 : 0,
+          ob: K.obs ? (r[K.obs]||"") : "",
+          es: K.escenario ? r[K.escenario] : ""
+        });
+      });
+
+      const tiendaSet = new Set(rows.map(r=>r.bd));
+      const criticos = rows.filter(r=>alertaBucket(r.al)==="critico").length;
+
+      state.parsedRows = rows;
+      state.parsedSummary = { total: rows.length, tiendas: tiendaSet.size, criticos, omitidas };
+      render();
+    }catch(err){
+      state.parseError = "No se pudo leer el archivo: " + err.message;
+      render();
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function doPublish(){
+  state.publishing = true;
+  state.publishProgress = 15;
+  render();
+
+  const rows = state.parsedRows;
+  const grouped = {};
+  rows.forEach(r=>{
+    const slug = slugify(r.bd);
+    if(!grouped[slug]) grouped[slug] = { nombre: r.bd, items: [] };
+    grouped[slug].items.push(r);
+  });
+
+  state.publishProgress = 45;
+  render();
+
+  const tiendas = Object.keys(grouped).map(slug=>{
+    const g = grouped[slug];
+    return {
+      slug,
+      nombre: g.nombre,
+      total: g.items.length,
+      criticos: g.items.filter(i=>alertaBucket(i.al)==="critico").length
+    };
+  });
+
+  const dataObj = {};
+  Object.keys(grouped).forEach(slug=>{ dataObj[slug] = grouped[slug].items; });
+
+  const payload = {
+    meta: {
+      fechaCorte: state.fechaCorte,
+      fechaCarga: new Date().toISOString(),
+      totalRegistros: rows.length,
+      totalTiendas: tiendas.length
+    },
+    tiendas,
+    data: dataObj
+  };
+
+  state.publishProgress = 75;
+  render();
+
+  try{
+    const jsonStr = JSON.stringify(payload, null, 2);
+    const blob = new Blob([jsonStr], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "inventario.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    state.publishProgress = 100;
+    state.cache = payload; // vista previa inmediata en esta sesión
+    state.publishing = false;
+    state.publishDone = true;
+    render();
+  }catch(err){
+    state.publishing = false;
+    state.parseError = "Error al generar el archivo: " + err.message;
+    render();
+  }
+}
+
+/* ============ INIT ============ */
+render();
+</script>
+</body>
+</html>
